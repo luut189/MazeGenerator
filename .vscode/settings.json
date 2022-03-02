@@ -1,0 +1,11 @@
+{
+    "java.project.sourcePaths": ["src"],
+    "java.project.outputPath": "bin",
+    "java.project.referencedLibraries": [
+        "lib/**/*.jar"
+    ],
+    "code-runner.runInTerminal": true,
+    "code-runner.executorMap": {
+        "java": "cd $dir && javac -d ../bin Main.java && java -classpath ../bin Main"
+    }
+}
