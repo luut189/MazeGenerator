@@ -9,7 +9,7 @@ import java.util.*;
 public class Renderer extends JPanel {
 
     int width, height, row, col;
-    int size = 30;
+    int size = 10;
     
     Cell[][] grid;
     Cell current;
@@ -29,8 +29,41 @@ public class Renderer extends JPanel {
         makeCells();
         this.current = grid[0][0];
         this.current.isVisited = true;
-        Timer t = new Timer(0, new ActionListener() {
+        createMaze();
+    }
 
+    public Cell tracingStep(Cell current, int x, int y) {
+        Random rand = new Random();
+        ArrayList<Cell> neighbor = new ArrayList<>();
+        
+        Cell top = !current.wall[0] && y - 1 >= 0 ? grid[x][y-1] : null;
+        Cell left = !current.wall[1] && x - 1 >= 0 ? grid[x-1][y] : null;
+        Cell right = !current.wall[2] && x + 1 < row-1 ? grid[x+1][y] : null;
+        Cell bottom = !current.wall[3] && y + 1 < col-1 ? grid[x][y+1] : null;
+
+        if(top != null) {
+            neighbor.add(top);
+        }
+        if(left != null) {
+            neighbor.add(left);
+        }
+        if(right != null) {
+            neighbor.add(right);
+        }
+        if(bottom != null) {
+            neighbor.add(bottom);
+        }
+
+        if(neighbor.size() > 0) {
+            int i = rand.nextInt(neighbor.size());
+            return neighbor.get(i);
+        } else {
+            return null;
+        }
+    }
+
+    public void createMaze() {
+        Timer t = new Timer(0, new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 Cell next = getNeighbor(current.x, current.y);
@@ -43,6 +76,26 @@ public class Renderer extends JPanel {
                 } else if(cellStack.size() > 0) {
                     current = cellStack.pop();
                     repaint();
+                } else if(allCellVisited()) {
+                    ((Timer) e.getSource()).stop();
+                    findPath();
+                }
+            }
+        });
+        t.start();
+    }
+
+    public void findPath() {
+        Timer t = new Timer(0, new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if(current != grid[row-1][col-1]) {
+                    Cell trace = tracingStep(current, current.x, current.y);
+                    if(trace != null) {
+                        cellStack.push(trace);
+                        current = trace;
+                        repaint();
+                    }
                 }
             }
         });

@@ -1,0 +1,2 @@
+language = "java10"
+run = "cd src; javac -d ../bin Main.java; java -classpath ../bin Main; cd .."
