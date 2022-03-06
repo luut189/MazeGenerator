@@ -44,6 +44,17 @@ public class Cell {
         if(this.wall[3]) g.drawLine(x*w, (y*w)+w, (x*w)+w, (y*w)+w); //bot
     }
 
+    public void pointDisplay(Graphics g, int w, boolean isStart) {
+        g.setColor(isStart ? Color.cyan : Color.orange);
+        g.fillRect(x*w, y*w, w, w);
+
+        g.setColor(Color.white);
+        if(this.wall[0]) g.drawLine(x*w, y*w, (x*w)+w, y*w); //top
+        if(this.wall[1]) g.drawLine(x*w, y*w, x*w, (y*w)+w); //left
+        if(this.wall[2]) g.drawLine((x*w)+w, y*w, (x*w)+w, (y*w)+w); //right
+        if(this.wall[3]) g.drawLine(x*w, (y*w)+w, (x*w)+w, (y*w)+w); //bot
+    }
+
     public ArrayList<Cell> getWalkableNeighbor(Cell[][] grid, int row, int col) {
         ArrayList<Cell> neighbor = new ArrayList<>();
         

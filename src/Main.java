@@ -1,5 +1,5 @@
 public class Main {
     public static void main(String[] args) throws Exception {
-        new Frame("Maze", 300, 300);
+        new Frame("Maze", 500, 500);
     }
 }
