@@ -8,13 +8,15 @@ import java.util.*;
 
 public class Renderer extends JPanel {
 
+    boolean isFinished = false, gotPath = false;
     int width, height, row, col;
     int size = 10;
     
     Cell[][] grid;
-    Cell current;
+    Cell current, start, end;
 
     Stack<Cell> cellStack = new Stack<>();
+    ArrayList<Cell> neighbors, closedSet, openSet, path;
     
     Renderer(int width, int height) {
         this.width = width;
@@ -27,39 +29,14 @@ public class Renderer extends JPanel {
         this.setBackground(Color.black);
 
         makeCells();
+
         this.current = grid[0][0];
         this.current.isVisited = true;
+
+        this.start = grid[0][0];
+        this.end = grid[row-1][col-1];
+
         createMaze();
-    }
-
-    public Cell tracingStep(Cell current, int x, int y) {
-        Random rand = new Random();
-        ArrayList<Cell> neighbor = new ArrayList<>();
-        
-        Cell top = !current.wall[0] && y - 1 >= 0 ? grid[x][y-1] : null;
-        Cell left = !current.wall[1] && x - 1 >= 0 ? grid[x-1][y] : null;
-        Cell right = !current.wall[2] && x + 1 < row-1 ? grid[x+1][y] : null;
-        Cell bottom = !current.wall[3] && y + 1 < col-1 ? grid[x][y+1] : null;
-
-        if(top != null) {
-            neighbor.add(top);
-        }
-        if(left != null) {
-            neighbor.add(left);
-        }
-        if(right != null) {
-            neighbor.add(right);
-        }
-        if(bottom != null) {
-            neighbor.add(bottom);
-        }
-
-        if(neighbor.size() > 0) {
-            int i = rand.nextInt(neighbor.size());
-            return neighbor.get(i);
-        } else {
-            return null;
-        }
     }
 
     public void createMaze() {
@@ -78,6 +55,8 @@ public class Renderer extends JPanel {
                     repaint();
                 } else if(allCellVisited()) {
                     ((Timer) e.getSource()).stop();
+                    isFinished = true;
+                    current = start;
                     findPath();
                 }
             }
@@ -86,18 +65,70 @@ public class Renderer extends JPanel {
     }
 
     public void findPath() {
+        closedSet = new ArrayList<>();
+        openSet = new ArrayList<>();
+        path = new ArrayList<>();
+
+        openSet.add(start);
+
         Timer t = new Timer(0, new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                if(current != grid[row-1][col-1]) {
-                    Cell trace = tracingStep(current, current.x, current.y);
-                    if(trace != null) {
-                        cellStack.push(trace);
-                        current = trace;
-                        repaint();
+                if(openSet.size() > 0) {
+                    int winner = 0;
+                    for(int i = 0; i < openSet.size(); i++) {
+                        if(openSet.get(i).f < openSet.get(winner).f) {
+                            winner = i;
+                        }
                     }
+                    current = openSet.get(winner);
+
+                    if(current == end) {
+                        ((Timer)e.getSource()).stop();
+                        System.out.println("Finished");
+                        repaint();
+                        gotPath = true;
+                    }
+
+                    openSet.remove(current);
+                    closedSet.add(current);
+
+                    neighbors = current.getWalkableNeighbor(grid, row, col);
+                    for(int i = 0; i < neighbors.size(); i++) {
+                        Cell neighbor = neighbors.get(i);
+
+                        if(!closedSet.contains(neighbor)) {
+                            int tempG = current.g + heuristic(neighbor, current);
+                            boolean newPath = false;
+                            if(openSet.contains(neighbor)) {
+                                if(tempG < neighbor.g) {
+                                    neighbor.g = tempG;
+                                    newPath = true;
+                                }
+                            } else {
+                                neighbor.g = tempG;
+                                newPath = true;
+                                openSet.add(neighbor);
+                            }
+
+                            if(newPath) {
+                                neighbor.h = heuristic(neighbor, end);
+                                neighbor.f = neighbor.g + neighbor.h;
+                                neighbor.previous = current;
+                            }
+                        }
+                    }
+                } else {
+                    System.out.println("No solution");
+                    ((Timer) e.getSource()).stop();
                 }
+                repaint();
             }
+
+            public int heuristic(Cell a, Cell b) {
+                return Math.abs(a.x-b.x) + Math.abs(a.y-b.y);
+            }
+            
         });
         t.start();
     }
@@ -141,15 +172,6 @@ public class Renderer extends JPanel {
         }
     }
 
-    public void randomCell() {
-        Random rand = new Random();
-        int x = rand.nextInt(row);
-        int y = rand.nextInt(col);
-
-        current = grid[x][y];
-        repaint();
-    }
-
     public Cell getNeighbor(int x, int y) {
         Random rand = new Random();
         ArrayList<Cell> neighbor = new ArrayList<>();
@@ -190,6 +212,78 @@ public class Renderer extends JPanel {
                 grid[x][y].display(g, size);
             }
         }
+
+        if(isFinished) {
+            for(int i = 0; i < neighbors.size(); i++) {
+                Cell neighbor = neighbors.get(i);
+                int x = neighbor.x;
+                int y = neighbor.y;
+                int w = size;
+                g.setColor(Color.cyan);
+                g.fillRect(x*w, y*w, w, w);
+
+                g.setColor(Color.white);
+                if(neighbor.wall[0]) g.drawLine(x*w, y*w, (x*w)+w, y*w); //top
+                if(neighbor.wall[1]) g.drawLine(x*w, y*w, x*w, (y*w)+w); //left
+                if(neighbor.wall[2]) g.drawLine((x*w)+w, y*w, (x*w)+w, (y*w)+w); //right
+                if(neighbor.wall[3]) g.drawLine(x*w, (y*w)+w, (x*w)+w, (y*w)+w); //bot
+            }
+
+            for(int i = 0; i < closedSet.size(); i++) {
+                Cell closed = closedSet.get(i);
+                int x = closed.x;
+                int y = closed.y;
+                int w = size;
+                g.setColor(Color.red);
+                g.fillRect(x*w, y*w, w, w);
+
+                g.setColor(Color.white);
+                if(closed.wall[0]) g.drawLine(x*w, y*w, (x*w)+w, y*w); //top
+                if(closed.wall[1]) g.drawLine(x*w, y*w, x*w, (y*w)+w); //left
+                if(closed.wall[2]) g.drawLine((x*w)+w, y*w, (x*w)+w, (y*w)+w); //right
+                if(closed.wall[3]) g.drawLine(x*w, (y*w)+w, (x*w)+w, (y*w)+w); //bot
+            }
+
+            for(int i = 0; i < openSet.size(); i++) {
+                Cell open = openSet.get(i);
+                int x = open.x;
+                int y = open.y;
+                int w = size;
+                g.setColor(Color.green);
+                g.fillRect(x*w, y*w, w, w);
+
+                g.setColor(Color.white);
+                if(open.wall[0]) g.drawLine(x*w, y*w, (x*w)+w, y*w); //top
+                if(open.wall[1]) g.drawLine(x*w, y*w, x*w, (y*w)+w); //left
+                if(open.wall[2]) g.drawLine((x*w)+w, y*w, (x*w)+w, (y*w)+w); //right
+                if(open.wall[3]) g.drawLine(x*w, (y*w)+w, (x*w)+w, (y*w)+w); //bot
+            }
+        }
+
+        if(gotPath) {
+            Cell temp = current;
+            path.add(temp);
+            while(temp.previous != null) {
+                path.add(temp.previous);
+                temp = temp.previous;
+            }
+
+            for(int i = 0; i < path.size(); i++) {
+                Cell p = path.get(i);
+                int x = p.x;
+                int y = p.y;
+                int w = size;
+                g.setColor(Color.blue);
+                g.fillRect(x*w, y*w, w, w);
+
+                g.setColor(Color.white);
+                if(p.wall[0]) g.drawLine(x*w, y*w, (x*w)+w, y*w); //top
+                if(p.wall[1]) g.drawLine(x*w, y*w, x*w, (y*w)+w); //left
+                if(p.wall[2]) g.drawLine((x*w)+w, y*w, (x*w)+w, (y*w)+w); //right
+                if(p.wall[3]) g.drawLine(x*w, (y*w)+w, (x*w)+w, (y*w)+w); //bot
+            }
+        }
+
         current.currentDisplay(g, size);
     }
 
