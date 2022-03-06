@@ -10,7 +10,7 @@ public class Renderer extends JPanel {
 
     boolean isFinished = false, gotPath = false;
     int width, height, row, col;
-    int size = 25;
+    int size = 10;
     
     Cell[][] grid;
     Cell current, start, end;
@@ -19,6 +19,7 @@ public class Renderer extends JPanel {
     ArrayList<Cell> neighbors, closedSet, openSet, path;
     
     Renderer(int width, int height) {
+        Random rand = new Random();
         this.width = width;
         this.height = height;
         this.row = Math.round(width/size);
@@ -34,7 +35,7 @@ public class Renderer extends JPanel {
         this.current.isVisited = true;
 
         this.start = grid[0][0];
-        this.end = grid[row-1][col-1];
+        this.end = grid[rand.nextInt(row)][rand.nextInt(col)];
 
         createMaze();
     }
@@ -88,6 +89,7 @@ public class Renderer extends JPanel {
                         System.out.println("Finished");
                         repaint();
                         gotPath = true;
+                        tracePath();
                     }
 
                     openSet.remove(current);
@@ -129,6 +131,21 @@ public class Renderer extends JPanel {
                 return Math.abs(a.x-b.x) + Math.abs(a.y-b.y);
             }
             
+        });
+        t.start();
+    }
+
+    protected void tracePath() {
+        Timer t = new Timer(0, new ActionListener() {
+            Cell temp = current;
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if(temp.previous != null) {
+                    path.add(temp.previous);
+                    temp = temp.previous;
+                }
+                repaint();
+            }
         });
         t.start();
     }
@@ -251,13 +268,6 @@ public class Renderer extends JPanel {
         }
 
         if(gotPath) {
-            Cell temp = current;
-            path.add(temp);
-            while(temp.previous != null) {
-                path.add(temp.previous);
-                temp = temp.previous;
-            }
-
             for(int i = 0; i < path.size(); i++) {
                 Cell p = path.get(i);
                 int x = p.x;
