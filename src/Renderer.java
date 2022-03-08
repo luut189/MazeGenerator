@@ -10,7 +10,7 @@ public class Renderer extends JPanel {
 
     boolean isFinished = false, gotPath = false;
     int width, height, row, col;
-    int size = 10;
+    int size = 50;
     
     Cell[][] grid;
     Cell current, start, end;
@@ -127,7 +127,7 @@ public class Renderer extends JPanel {
                 repaint();
             }
 
-            public int heuristic(Cell a, Cell b) {
+            private int heuristic(Cell a, Cell b) {
                 return Math.abs(a.x-b.x) + Math.abs(a.y-b.y);
             }
             
@@ -234,33 +234,13 @@ public class Renderer extends JPanel {
             if(!gotPath) {
                 for(int i = 0; i < neighbors.size(); i++) {
                     Cell neighbor = neighbors.get(i);
-                    int x = neighbor.x;
-                    int y = neighbor.y;
-                    int w = size;
-                    g.setColor(Color.cyan);
-                    g.fillRect(x*w, y*w, w, w);
-    
-                    g.setColor(Color.white);
-                    if(neighbor.wall[0]) g.drawLine(x*w, y*w, (x*w)+w, y*w); //top
-                    if(neighbor.wall[1]) g.drawLine(x*w, y*w, x*w, (y*w)+w); //left
-                    if(neighbor.wall[2]) g.drawLine((x*w)+w, y*w, (x*w)+w, (y*w)+w); //right
-                    if(neighbor.wall[3]) g.drawLine(x*w, (y*w)+w, (x*w)+w, (y*w)+w); //bot
+                    neighbor.displayCell(g, size, Color.cyan);
                 }
             }
 
             for(int i = 0; i < closedSet.size(); i++) {
                 Cell closed = closedSet.get(i);
-                int x = closed.x;
-                int y = closed.y;
-                int w = size;
-                g.setColor(Color.red);
-                g.fillRect(x*w, y*w, w, w);
-
-                g.setColor(Color.white);
-                if(closed.wall[0]) g.drawLine(x*w, y*w, (x*w)+w, y*w); //top
-                if(closed.wall[1]) g.drawLine(x*w, y*w, x*w, (y*w)+w); //left
-                if(closed.wall[2]) g.drawLine((x*w)+w, y*w, (x*w)+w, (y*w)+w); //right
-                if(closed.wall[3]) g.drawLine(x*w, (y*w)+w, (x*w)+w, (y*w)+w); //bot
+                closed.displayCell(g, size, Color.red);
             }
 
             start.pointDisplay(g, size, true);
@@ -270,24 +250,14 @@ public class Renderer extends JPanel {
         if(gotPath) {
             for(int i = 0; i < path.size(); i++) {
                 Cell p = path.get(i);
-                int x = p.x;
-                int y = p.y;
-                int w = size;
-                g.setColor(Color.blue);
-                g.fillRect(x*w, y*w, w, w);
-
-                g.setColor(Color.white);
-                if(p.wall[0]) g.drawLine(x*w, y*w, (x*w)+w, y*w); //top
-                if(p.wall[1]) g.drawLine(x*w, y*w, x*w, (y*w)+w); //left
-                if(p.wall[2]) g.drawLine((x*w)+w, y*w, (x*w)+w, (y*w)+w); //right
-                if(p.wall[3]) g.drawLine(x*w, (y*w)+w, (x*w)+w, (y*w)+w); //bot
+                p.displayCell(g, size, Color.blue);
             }
 
             start.pointDisplay(g, size, true);
             end.pointDisplay(g, size, false);
         }
 
-        if(!isFinished) current.currentDisplay(g, size);
+        if(!isFinished) current.displayCell(g, size, new Color(85, 176, 108));
     }
 
 }

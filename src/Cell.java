@@ -19,13 +19,7 @@ public class Cell {
         previous = null;
     }
 
-    public void display(Graphics g, int w) {
-
-        if(isVisited) {
-            g.setColor(new Color(129, 32, 129));
-            g.fillRect(x*w, y*w, w, w);
-        }
-        
+    public void drawWall(Graphics g, int w) {
         g.setColor(Color.white);
         if(this.wall[0]) g.drawLine(x*w, y*w, (x*w)+w, y*w); //top
         if(this.wall[1]) g.drawLine(x*w, y*w, x*w, (y*w)+w); //left
@@ -33,26 +27,23 @@ public class Cell {
         if(this.wall[3]) g.drawLine(x*w, (y*w)+w, (x*w)+w, (y*w)+w); //bot
     }
 
-    public void currentDisplay(Graphics g, int w) {
-        g.setColor(new Color(85, 176, 108));
-        g.fillRect(x*w, y*w, w, w);
-
-        g.setColor(Color.white);
-        if(this.wall[0]) g.drawLine(x*w, y*w, (x*w)+w, y*w); //top
-        if(this.wall[1]) g.drawLine(x*w, y*w, x*w, (y*w)+w); //left
-        if(this.wall[2]) g.drawLine((x*w)+w, y*w, (x*w)+w, (y*w)+w); //right
-        if(this.wall[3]) g.drawLine(x*w, (y*w)+w, (x*w)+w, (y*w)+w); //bot
+    public void display(Graphics g, int w) {
+        if(isVisited) {
+            this.displayCell(g, w, new Color(129, 32, 129));
+        }
+        drawWall(g, w);
     }
 
     public void pointDisplay(Graphics g, int w, boolean isStart) {
         g.setColor(isStart ? Color.cyan : Color.orange);
         g.fillRect(x*w, y*w, w, w);
+        drawWall(g, w);
+    }
 
-        g.setColor(Color.white);
-        if(this.wall[0]) g.drawLine(x*w, y*w, (x*w)+w, y*w); //top
-        if(this.wall[1]) g.drawLine(x*w, y*w, x*w, (y*w)+w); //left
-        if(this.wall[2]) g.drawLine((x*w)+w, y*w, (x*w)+w, (y*w)+w); //right
-        if(this.wall[3]) g.drawLine(x*w, (y*w)+w, (x*w)+w, (y*w)+w); //bot
+    public void displayCell(Graphics g, int w, Color color) {
+        g.setColor(color);
+        g.fillRect(x*w, y*w, w, w);
+        drawWall(g, w);
     }
 
     public ArrayList<Cell> getWalkableNeighbor(Cell[][] grid, int row, int col) {
