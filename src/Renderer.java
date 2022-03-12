@@ -10,13 +10,15 @@ public class Renderer extends JPanel {
 
     boolean isFinished = false, gotPath = false;
     int width, height, row, col;
-    int size = 50;
+    int size = 5;
     
     Cell[][] grid;
     Cell current, start, end;
 
     Stack<Cell> cellStack = new Stack<>();
     ArrayList<Cell> neighbors, closedSet, openSet, path;
+
+    boolean withAnimation = false, livePathfinding = false;
     
     Renderer(int width, int height) {
         Random rand = new Random();
@@ -41,34 +43,54 @@ public class Renderer extends JPanel {
     }
 
     public void createMaze() {
-        Timer t = new Timer(0, new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                Cell next = getNeighbor(current.x, current.y);
+        if(withAnimation) {
+            // maze with animation
+            Timer t = new Timer(0, new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    Cell next = current.getNeighbor(grid, row, col);
+                    if(next != null) {
+                        next.isVisited = true;
+                        cellStack.push(current);
+                        removeWall(current, next);
+                        current = next;
+                        repaint();
+                    } else if(cellStack.size() > 0) {
+                        current = cellStack.pop();
+                        repaint();
+                    } else if(allCellVisited()) {
+                        ((Timer) e.getSource()).stop();
+                        isFinished = true;
+                        current = start;
+                        findPath();
+                    }
+                }
+            });
+            t.start();
+        } else {
+            // make maze without animation
+            while(!allCellVisited()) {
+                Cell next = current.getNeighbor(grid, row, col);
                 if(next != null) {
                     next.isVisited = true;
                     cellStack.push(current);
                     removeWall(current, next);
                     current = next;
-                    repaint();
                 } else if(cellStack.size() > 0) {
                     current = cellStack.pop();
-                    repaint();
-                } else if(allCellVisited()) {
-                    ((Timer) e.getSource()).stop();
-                    isFinished = true;
-                    current = start;
-                    findPath();
                 }
             }
-        });
-        t.start();
+            repaint();
+            isFinished = true;
+            current = start;
+            findPath();
+        }
     }
 
     public void findPath() {
         closedSet = new ArrayList<>();
         openSet = new ArrayList<>();
-        path = new ArrayList<>();
+        if(!livePathfinding) path = new ArrayList<>();
 
         openSet.add(start);
 
@@ -89,7 +111,7 @@ public class Renderer extends JPanel {
                         System.out.println("Finished");
                         repaint();
                         gotPath = true;
-                        tracePath();
+                        if(!livePathfinding) tracePath();
                     }
 
                     openSet.remove(current);
@@ -120,6 +142,17 @@ public class Renderer extends JPanel {
                             }
                         }
                     }
+
+                    /* live path finding */
+                    if(livePathfinding) {
+                        path = new ArrayList<>();
+                        Cell temp = current;
+                        while(temp.previous != null) {
+                            path.add(temp.previous);
+                            temp = temp.previous;
+                        }
+                    }
+                    
                 } else {
                     System.out.println("No solution");
                     ((Timer) e.getSource()).stop();
@@ -135,7 +168,7 @@ public class Renderer extends JPanel {
         t.start();
     }
 
-    protected void tracePath() {
+    private void tracePath() {
         Timer t = new Timer(0, new ActionListener() {
             Cell temp = current;
             @Override
@@ -189,35 +222,6 @@ public class Renderer extends JPanel {
         }
     }
 
-    public Cell getNeighbor(int x, int y) {
-        Random rand = new Random();
-        ArrayList<Cell> neighbor = new ArrayList<>();
-
-        Cell top = y-1 >= 0 ? grid[x][y-1] : null;
-        Cell bottom = y+1 < col ? grid[x][y+1] : null;
-        Cell left = x-1 >= 0 ? grid[x-1][y] : null;
-        Cell right = x+1 < row ? grid[x+1][y] : null;
-
-        if(top != null && !top.isVisited) {
-            neighbor.add(top);
-        }
-        if(bottom != null && !bottom.isVisited) {
-            neighbor.add(bottom);
-        }
-        if(left != null && !left.isVisited) {
-            neighbor.add(left);
-        }
-        if(right != null && !right.isVisited) {
-            neighbor.add(right);
-        }
-        if(neighbor.size() > 0) {
-            int i = rand.nextInt(neighbor.size());
-            return neighbor.get(i);
-        } else {
-            return null;
-        }
-    }
-
     public void paintComponent(Graphics g) {
         super.paintComponent(g);
         draw(g);
@@ -232,10 +236,12 @@ public class Renderer extends JPanel {
 
         if(isFinished) {
             if(!gotPath) {
+                /* doesn't seem to be necessary
                 for(int i = 0; i < neighbors.size(); i++) {
                     Cell neighbor = neighbors.get(i);
                     neighbor.displayCell(g, size, Color.cyan);
                 }
+                */
             }
 
             for(int i = 0; i < closedSet.size(); i++) {
@@ -243,14 +249,41 @@ public class Renderer extends JPanel {
                 closed.displayCell(g, size, Color.red);
             }
 
+            /* for live path finding */
+            if(livePathfinding) {
+                int x = 0;
+                boolean isReverse = false;
+                for(int i = 0; i < path.size(); i++) {
+                    Cell p = path.get(i);
+                    p.displayCell(g, size, new Color(0, x, 255));
+                    if(isReverse) {
+                        x--;
+                        if(x == 0) isReverse = false;
+                    } else {
+                        x++;
+                        if(x == 255) isReverse = true;
+                    }
+                }
+            }
+
             start.pointDisplay(g, size, true);
             end.pointDisplay(g, size, false);
         }
-
-        if(gotPath) {
+        
+        // for path tracing
+        if(gotPath && !livePathfinding) {
+            int x = 0;
+            boolean isReverse = false;
             for(int i = 0; i < path.size(); i++) {
                 Cell p = path.get(i);
-                p.displayCell(g, size, Color.blue);
+                p.displayCell(g, size, new Color(0, x, 255));
+                if(isReverse) {
+                    x--;
+                    if(x == 0) isReverse = false;
+                } else {
+                    x++;
+                    if(x == 255) isReverse = true;
+                }
             }
 
             start.pointDisplay(g, size, true);

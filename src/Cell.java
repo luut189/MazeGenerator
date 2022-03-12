@@ -49,10 +49,10 @@ public class Cell {
     public ArrayList<Cell> getWalkableNeighbor(Cell[][] grid, int row, int col) {
         ArrayList<Cell> neighbor = new ArrayList<>();
         
-        Cell top = !this.wall[0] && this.y - 1 >= 0 ? grid[x][y-1] : null;
-        Cell left = !this.wall[1] && this.x - 1 >= 0 ? grid[x-1][y] : null;
-        Cell right = !this.wall[2] && this.x + 1 <= row-1 ? grid[x+1][y] : null;
-        Cell bottom = !this.wall[3] && this.y + 1 <= col-1 ? grid[x][y+1] : null;
+        Cell top = !this.wall[0] && y - 1 >= 0 ? grid[x][y-1] : null;
+        Cell left = !this.wall[1] && x - 1 >= 0 ? grid[x-1][y] : null;
+        Cell right = !this.wall[2] && x + 1 <= row-1 ? grid[x+1][y] : null;
+        Cell bottom = !this.wall[3] && y + 1 <= col-1 ? grid[x][y+1] : null;
 
         if(top != null) {
             neighbor.add(top);
@@ -68,6 +68,35 @@ public class Cell {
         }
         
         return neighbor;
+    }
+
+    public Cell getNeighbor(Cell[][] grid, int row, int col) {
+        Random rand = new Random();
+        ArrayList<Cell> neighbor = new ArrayList<>();
+
+        Cell top = y-1 >= 0 ? grid[x][y-1] : null;
+        Cell bottom = y+1 < col ? grid[x][y+1] : null;
+        Cell left = x-1 >= 0 ? grid[x-1][y] : null;
+        Cell right = x+1 < row ? grid[x+1][y] : null;
+
+        if(top != null && !top.isVisited) {
+            neighbor.add(top);
+        }
+        if(bottom != null && !bottom.isVisited) {
+            neighbor.add(bottom);
+        }
+        if(left != null && !left.isVisited) {
+            neighbor.add(left);
+        }
+        if(right != null && !right.isVisited) {
+            neighbor.add(right);
+        }
+        if(neighbor.size() > 0) {
+            int i = rand.nextInt(neighbor.size());
+            return neighbor.get(i);
+        } else {
+            return null;
+        }
     }
 
     public void getInfo() {
