@@ -18,7 +18,7 @@ public class Renderer extends JPanel {
     Stack<Cell> cellStack = new Stack<>();
     ArrayList<Cell> neighbors, closedSet, openSet, path;
 
-    boolean withAnimation = false, livePathfinding = false;
+    boolean mazeAnimation = false, livePathfinding = true, useLine = true;
     
     Renderer(int width, int height) {
         Random rand = new Random();
@@ -39,11 +39,13 @@ public class Renderer extends JPanel {
         this.start = grid[0][0];
         this.end = grid[rand.nextInt(row)][rand.nextInt(col)];
 
+        if(size < 10) useLine = false;
+
         createMaze();
     }
 
     public void createMaze() {
-        if(withAnimation) {
+        if(mazeAnimation) {
             // maze with animation
             Timer t = new Timer(0, new ActionListener() {
                 @Override
@@ -146,6 +148,7 @@ public class Renderer extends JPanel {
                     /* live path finding */
                     if(livePathfinding) {
                         path = new ArrayList<>();
+                        path.add(end);
                         Cell temp = current;
                         while(temp.previous != null) {
                             path.add(temp.previous);
@@ -169,6 +172,7 @@ public class Renderer extends JPanel {
     }
 
     private void tracePath() {
+        path.add(end);
         Timer t = new Timer(0, new ActionListener() {
             Cell temp = current;
             @Override
@@ -227,6 +231,35 @@ public class Renderer extends JPanel {
         draw(g);
     }
 
+    public void pathTracing(Graphics g) {
+        if(!useLine) {
+            int x = 0;
+            boolean isReverse = false;
+            for(int i = 0; i < path.size(); i++) {
+                Cell p = path.get(i);
+                p.displayCell(g, size, new Color(0, x, 255));
+                if(isReverse) {
+                    x--;
+                    if(x == 30) isReverse = false;
+                } else {
+                    x++;
+                    if(x == 190) isReverse = true;
+                }
+            }
+        } else {
+            for(int i = 0; i < path.size()-1; i++) {
+                Cell p = path.get(i);
+                Cell n = path.get(i+1);
+                // p.displayCell(g, size, Color.blue);
+                Graphics2D g2d = (Graphics2D) g;
+                g2d.setColor(Color.green);
+                if(size >= 25) g2d.setStroke(new BasicStroke(2));
+                g2d.drawLine((p.x*size)+size/2, (p.y*size)+size/2, (n.x*size)+size/2, (n.y*size)+size/2);
+                g2d.setStroke(new BasicStroke(1));
+            }
+        }
+    }
+
     public void draw(Graphics g) {
         for(int x = 0; x < row; x++) {
             for(int y = 0; y < col; y++) {
@@ -251,19 +284,7 @@ public class Renderer extends JPanel {
 
             /* for live path finding */
             if(livePathfinding) {
-                int x = 0;
-                boolean isReverse = false;
-                for(int i = 0; i < path.size(); i++) {
-                    Cell p = path.get(i);
-                    p.displayCell(g, size, new Color(0, x, 255));
-                    if(isReverse) {
-                        x--;
-                        if(x == 0) isReverse = false;
-                    } else {
-                        x++;
-                        if(x == 255) isReverse = true;
-                    }
-                }
+                pathTracing(g);
             }
 
             start.pointDisplay(g, size, true);
@@ -272,19 +293,7 @@ public class Renderer extends JPanel {
         
         // for path tracing
         if(gotPath && !livePathfinding) {
-            int x = 0;
-            boolean isReverse = false;
-            for(int i = 0; i < path.size(); i++) {
-                Cell p = path.get(i);
-                p.displayCell(g, size, new Color(0, x, 255));
-                if(isReverse) {
-                    x--;
-                    if(x == 0) isReverse = false;
-                } else {
-                    x++;
-                    if(x == 255) isReverse = true;
-                }
-            }
+            pathTracing(g);
 
             start.pointDisplay(g, size, true);
             end.pointDisplay(g, size, false);
